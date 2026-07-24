@@ -1,0 +1,10 @@
+---
+title: Rust 入門教程（給 Python 開發者）
+author: Rust Tutorial
+lang: zh-TW
+description: |
+  一套專為熟悉 Python 的開發者設計的繁體中文 Rust 入門教程。
+  從 ownership / borrowing 基礎，到 CLI、TUI、async、網路、SQLite、Web API，
+  每章都有可執行的範例與 Python 對照。
+rights: 自由使用於學習目的
+---

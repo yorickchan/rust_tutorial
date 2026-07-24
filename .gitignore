@@ -12,3 +12,6 @@
 
 # 本機工作筆記（session notes，不入版控）
 /NOTES.local.md
+
+# EPUB 組裝中間產物（assemble.py 產出，可重新生成）
+/ebook/book.md

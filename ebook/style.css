@@ -1,0 +1,173 @@
+/* Rust 入門教程 EPUB 樣式 */
+
+body {
+  font-family: "PingFang TC", "Noto Sans TC", "Heiti TC",
+               "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  line-height: 1.7;
+  margin: 0;
+  padding: 0;
+}
+
+/* 標題 */
+h1 {
+  font-size: 1.9em;
+  font-weight: bold;
+  text-align: center;
+  margin-top: 1.5em;
+  margin-bottom: 0.8em;
+  page-break-before: always;
+  border-bottom: 2px solid #b45309;
+  padding-bottom: 0.3em;
+}
+
+/* 第一個 h1（封面）不換頁 */
+h1:first-of-type {
+  page-break-before: avoid;
+}
+
+h2 {
+  font-size: 1.4em;
+  font-weight: bold;
+  margin-top: 1.4em;
+  margin-bottom: 0.6em;
+  color: #b45309;
+  border-bottom: 1px solid #d1d5db;
+  padding-bottom: 0.2em;
+}
+
+h3 {
+  font-size: 1.15em;
+  font-weight: bold;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+  color: #374151;
+}
+
+h4 {
+  font-size: 1.05em;
+  font-weight: bold;
+  margin-top: 1em;
+  margin-bottom: 0.4em;
+  color: #4b5563;
+}
+
+/* 段落 */
+p {
+  margin: 0.6em 0;
+  text-align: justify;
+}
+
+/* 程式碼 - 行內 */
+code {
+  font-family: "JetBrains Mono", "Fira Code", "SF Mono", "Menlo",
+               "Consolas", monospace;
+  font-size: 0.88em;
+  background-color: #f3f4f6;
+  padding: 0.1em 0.35em;
+  border-radius: 3px;
+  color: #be185d;
+  word-break: break-all;
+}
+
+/* 程式碼區塊 */
+pre {
+  font-family: "JetBrains Mono", "Fira Code", "SF Mono", "Menlo",
+               "Consolas", monospace;
+  font-size: 0.82em;
+  line-height: 1.5;
+  background-color: #1e293b;
+  color: #e2e8f0;
+  padding: 0.9em 1em;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 1em 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+pre code {
+  background-color: transparent;
+  color: inherit;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+  word-break: normal;
+}
+
+/* 引用塊（學習目標、注意事項） */
+blockquote {
+  margin: 1em 0;
+  padding: 0.6em 1em;
+  border-left: 4px solid #3b82f6;
+  background-color: #eff6ff;
+  border-radius: 0 4px 4px 0;
+  color: #1e3a5f;
+}
+
+blockquote p {
+  margin: 0.3em 0;
+}
+
+/* 表格 */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+  font-size: 0.92em;
+}
+
+th, td {
+  border: 1px solid #d1d5db;
+  padding: 0.5em 0.7em;
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  background-color: #f9fafb;
+  font-weight: bold;
+  color: #374151;
+}
+
+tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+/* 清單 */
+ul, ol {
+  margin: 0.6em 0;
+  padding-left: 1.8em;
+}
+
+li {
+  margin: 0.3em 0;
+}
+
+/* 水平線（章節分隔） */
+hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 2em 0;
+}
+
+/* 連結 */
+a {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+/* 強調 */
+strong {
+  font-weight: bold;
+  color: #1f2937;
+}
+
+em {
+  font-style: italic;
+}
+
+/* 圖片 */
+img {
+  max-width: 100%;
+  height: auto;
+}
