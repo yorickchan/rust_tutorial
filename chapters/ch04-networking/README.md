@@ -12,6 +12,68 @@ struct。我們使用的函式庫是 [`reqwest`](https://docs.rs/reqwest)（HTTP
 - 理解 `Client` 重用（connection pool）、`error_for_status()`、以及
   `resp.json::<T>()` 與 Python `resp.json()` 的關鍵差異。
 
+## 本章相依套件與 Cargo.toml
+
+本章會用到 4 個 crate：`reqwest`（HTTP client）、`tokio`（async runtime）、`serde`（序列化）、`serde_json`（JSON 格式）。完整 `Cargo.toml`：
+
+```toml
+[package]
+name = "ch04-networking"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+reqwest = { version = "0.13", features = ["json"] }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[[bin]]
+name = "ch04-networking"
+path = "src/main.rs"
+```
+
+### 各套件用途與 features 說明
+
+| crate | 用途 | Python 對照 | 為什麼選它 |
+|---|---|---|---|
+| `reqwest` | HTTP client（發 GET/POST、管理 connection pool） | `requests` / `httpx` | Rust 最受歡迎的 HTTP client，API 風格接近 `requests` |
+| `tokio` | async runtime（reqwest 的非同步 API 需要它） | `asyncio` | reqwest 預設是 async，必須有 runtime 才能跑 |
+| `serde` | 序列化框架（提供 `Deserialize` trait） | 無直接對應 | 把 JSON 反序列化成 struct 的基礎 |
+| `serde_json` | JSON 格式實作 | `json` 模組 | 配合 serde 做具體 JSON 轉換 |
+
+### 為什麼需要 4 個 crate？
+
+Python 一行 `import requests; requests.get(url).json()` 就搞定，背後是 `requests` 把「HTTP + JSON + 字典」全包了。Rust 把這些職責拆開：
+
+1. `reqwest` 只管 HTTP 協定（發請求、收回應、connection pool）。
+2. `serde` 只定義「如何序列化」的 trait，不綁定任何格式。
+3. `serde_json` 把 serde trait 對應到 JSON 格式（讀寫 JSON 字串）。
+4. `tokio` 提供非同步執行環境（reqwest 的非同步 API 需要它）。
+
+看起來很多，但這是 Rust「每個 crate 只做一件事」的哲學。好處是可替換--不想用 JSON 揜成 `serde_yaml` 就好，HTTP 換成 `hyper` 或 `ureq` 也行。
+
+### features 開關說明
+
+- **`reqwest = { features = ["json"] }`**：啟用 JSON 支援。reqwest 預設不綁 serde，加 `json` feature 後才能用 `resp.json::<T>()`（自動把回應體反序列化成 struct）。不加這個 feature，`resp.json()` 會編譯失敗。
+- **`tokio = { features = ["full"] }`**：全功能 runtime。理由同 ch03--本章用 `#[tokio::main]` 巨集與非同步執行，需要 `rt-multi-thread` + `macros` 等 feature。
+- **`serde = { features = ["derive"] }`**：啟用 `#[derive(Deserialize)]`，讓 struct 自動具備從 JSON 反序列化的能力。詳見 ch00〈什麼是 `features = ["derive"]`？〉小節。
+- **`serde_json = "1"`**：純版本號、無 features。本章主要靠 reqwest 的 `json` feature 做反序列化，serde_json 是它的底層依賴（reqwest `json` feature 會拉進來），但顯式列出方便讀者理解。
+
+### 安裝指令對照
+
+```bash
+# 方法一：cargo add（推薦）
+cargo add reqwest --features json
+cargo add tokio --features full
+cargo add serde --features derive
+cargo add serde_json
+
+# 方法二：直接編輯 [dependencies] 區塊（如上面的 Cargo.toml 所示）
+```
+
+Python 對照：相當於 `pip install requests`（async 版還要 `httpx` + `asyncio`），但 Rust 把職責拆得更細。注意本章需要網路連線才能跑（會打 `https://httpbin.org`）。
+
 ## Python 對照
 
 | 概念 | Python（`requests`） | Rust（`reqwest` + `serde`） |

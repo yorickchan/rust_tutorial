@@ -21,6 +21,7 @@ CHAPTERS = [
     "chapters/ch04-networking/README.md",
     "chapters/ch05-sqlite/README.md",
     "chapters/ch06-web/README.md",
+    "chapters/ch07-macros/README.md",
 ]
 
 MERMAID_REPLACEMENT = """```text
@@ -31,6 +32,9 @@ ch00 基礎 ──► ch01 CLI ──► ch02 TUI ──┐
                        ch05 sqlite ────┘                        │
                                                                 ▼
                                                         ch06 web（壓軸）
+                                                                │
+                                                                ▼
+                                                          ch07 巨集
 
   黃色 = 起點（必讀）  綠色 = 終點（壓軸整合）
   箭頭 = 「先學 A 才好學 B」

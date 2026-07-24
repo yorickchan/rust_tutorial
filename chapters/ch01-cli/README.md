@@ -7,23 +7,68 @@
 - 用 `enum` + `#[derive(Subcommand)]` 定義子命令（subcommand）。
 - 對照 Python `argparse`，建立「Python → Rust」的心智模型。
 
----
+## 本章相依套件與 Cargo.toml
+
+本章會用到 3 個 crate：`clap`（CLI 解析）、`serde`（序列化）、`serde_json`（JSON 處理）。完整 `Cargo.toml` 如下（本教程各章的 `Cargo.toml` 都長這個樣子，差別只在 `[dependencies]` 區塊）：
+
+```toml
+[package]
+name = "ch01-cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.6", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[[bin]]
+name = "ch01-cli"
+path = "src/main.rs"
+```
+
+### 各套件用途與 features 說明
+
+| crate        | 用途                                              | Python 對照               | 為什麼選它                                         |
+| ------------ | ------------------------------------------------- | ------------------------- | -------------------------------------------------- |
+| `clap`       | 命令列參數解析（位置參數、旗標、子命令）          | `argparse`                | Rust 生態事實標準，型別安全                        |
+| `serde`      | 序列化框架（序列化 / 反序列化的核心 trait）       | 無直接對應（Python 內建） | Rust 序列化的基礎建設                              |
+| `serde_json` | JSON 格式的具體實作（把 serde trait 對應到 JSON） | `json` 模組               | serde 只定義 trait，需要格式 crate 才能實際轉 JSON |
+
+### features 開關說明
+
+- **`clap = { features = ["derive"] }`**：啟用 derive 巨集，讓你用 `#[derive(Parser)]` 把 struct 欄位直接變成 CLI 參數定義（不用手寫一長串 `.arg()` 呼叫）。概念同 ch00 介紹過的 serde derive--巨集自動產生樣板碼。不加這個 feature，`#[derive(Parser)]` 會編譯失敗。
+- **`serde = { features = ["derive"] }`**：啟用 `#[derive(Serialize, Deserialize)]`，讓 struct 自動具備 JSON 轉換能力。本章的 `Todo` struct 靠它才能存成 JSON 檔。詳見 ch00〈什麼是 `features = ["derive"]`？〉小節。
+- **`serde_json = "1"`**：純版本號、無 features。它是獨立 crate（不是 serde 的 feature），負責 JSON 格式的具體讀寫。
+
+### 安裝指令對照
+
+```bash
+# 方法一：cargo add（推薦，自動寫入 Cargo.toml）
+cargo add clap --features derive
+cargo add serde --features derive
+cargo add serde_json
+
+# 方法二：直接編輯 [dependencies] 區塊（如上面的 Cargo.toml 所示）
+```
+
+Python 對照：相當於 `pip install clap serde serde-json`，但 Rust 不需要虛擬環境--每個專案的相依隔離在各自的 `Cargo.lock`。`[[bin]]` 區塊指定執行檔名與進入點，Python 沒有對應物（Python 的進入點就是 `python main.py`）。
 
 ## Python 對照
 
 Python 開發者通常用標準庫 `argparse` 做 CLI。clap 的 derive API 概念相近，但把「參數定義」直接寫成 struct / enum 欄位，由巨集自動產生解析邏輯，型別也更安全。
 
-| 概念 | Python (`argparse`) | Rust (`clap` derive) |
-|---|---|---|
-| 解析器 | `ArgumentParser()` | `#[derive(Parser)] struct Cli` |
-| 子命令 | `add_subparsers()` | `#[command(subcommand)] command: Commands` |
-| 個別子命令 | `add_parser("add")` | `enum Commands` 的 variant |
-| 位置參數 | `add_argument("task")` | `task: String`（裸欄位） |
-| 旗標 `--name` | `add_argument("--name")` | `#[arg(long)] name: Option<String>` |
-| 短旗標 `-n` | `add_argument("-n")` | `#[arg(short, long)] name: Option<String>` |
-| 說明文字 | `help="..."` | `///` doc comment |
-| 自動 `--help` | 內建 | 內建 |
-| 自動 `--version` | 需 `action="version"` | `#[command(version)]` 內建 |
+| 概念             | Python (`argparse`)      | Rust (`clap` derive)                       |
+| ---------------- | ------------------------ | ------------------------------------------ |
+| 解析器           | `ArgumentParser()`       | `#[derive(Parser)] struct Cli`             |
+| 子命令           | `add_subparsers()`       | `#[command(subcommand)] command: Commands` |
+| 個別子命令       | `add_parser("add")`      | `enum Commands` 的 variant                 |
+| 位置參數         | `add_argument("task")`   | `task: String`（裸欄位）                   |
+| 旗標 `--name`    | `add_argument("--name")` | `#[arg(long)] name: Option<String>`        |
+| 短旗標 `-n`      | `add_argument("-n")`     | `#[arg(short, long)] name: Option<String>` |
+| 說明文字         | `help="..."`             | `///` doc comment                          |
+| 自動 `--help`    | 內建                     | 內建                                       |
+| 自動 `--version` | 需 `action="version"`    | `#[command(version)]` 內建                 |
 
 ### 並排程式碼對照
 
@@ -102,11 +147,11 @@ struct Cli {
 
 這是 Python 開發者最容易搞混的地方，務必記住：
 
-| 寫法 | 是什麼 | 範例 |
-|---|---|---|
-| `task: String`（裸欄位） | **必填位置參數** | `cargo run -- add "買牛奶"` |
-| `#[arg(long)] name: Option<String>` | **選用旗標** `--name` | `cargo run -- --name foo` |
-| `#[arg(short, long)] name: Option<String>` | **短+長旗標** `-n` / `--name` | `cargo run -- -n foo` |
+| 寫法                                       | 是什麼                        | 範例                        |
+| ------------------------------------------ | ----------------------------- | --------------------------- |
+| `task: String`（裸欄位）                   | **必填位置參數**              | `cargo run -- add "買牛奶"` |
+| `#[arg(long)] name: Option<String>`        | **選用旗標** `--name`         | `cargo run -- --name foo`   |
+| `#[arg(short, long)] name: Option<String>` | **短+長旗標** `-n` / `--name` | `cargo run -- -n foo`       |
 
 #### ⚠️ Python 開發者注意
 

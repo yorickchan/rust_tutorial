@@ -7,6 +7,53 @@
 - 認識 raw mode 與 alternate screen，以及為什麼它們是 TUI 必備的兩個模式。
 - 建立「資源必須清理」的直覺：終端機是有限狀態資源，離開時一定要還原。
 
+## 本章相依套件與 Cargo.toml
+
+本章會用到 2 個 crate：`ratatui`（TUI 繪圖框架）與 `crossterm`（終端機底層控制）。完整 `Cargo.toml`：
+
+```toml
+[package]
+name = "ch02-tui"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ratatui = "0.30"
+crossterm = "0.29"
+
+[[bin]]
+name = "ch02-tui"
+path = "src/main.rs"
+```
+
+### 各套件用途與 features 說明
+
+| crate | 用途 | Python 對照 | 為什麼選它 |
+|---|---|---|---|
+| `ratatui` | 高階 TUI 框架（widget 系統：外框、段落、列表） | `curses` + 手動管理游標 | 把「畫面佈局」抽象成 widget 組合，不必算座標 |
+| `crossterm` | 終端機底層控制（raw mode、事件讀取、清除畫面） | `curses` 的底層部分 | 跨平台（Windows/Linux/macOS 都能用），是 ratatui 預設後端 |
+
+### 為什麼兩個 crate 分開？
+
+這是 Rust 生態常見的「關注點分離」設計：`ratatui` 只負責「畫什麼」（widget 佈局、渲染緩衝區），`crossterm` 只負責「怎麼畫到終端機」（進出 raw mode、讀按鍵、送 ANSI escape sequence）。兩者透過 ratatui 的 `Backend` trait 合作。Python 的 `curses` 把這兩層混在一起，所以 Python 開發者一開始會覺得「為什麼要裝兩個」--答案是各司其職、可替換後端（例如換成 `termion` 只需改一行）。
+
+### features 開關說明
+
+- **`ratatui = "0.30"`**：本章只用基礎 widget（`Block` 外框、`Paragraph` 段落），不需額外 features。`ratatui` 預設就啟用 `crossterm` 後端整合（`feature "crossterm"` 是 default features 的一部分），所以不必寫 `features = ["crossterm"]`。如果要用進階 widget（如日曆），才需加 `features = ["all-widgets"]` 或 `features = ["widget-calendar"]`。
+- **`crossterm = "0.29"`**：純版本號、無 features。本章用到 `event::read()`（讀按鍵）、`terminal::enable_raw_mode()`（進 raw mode）、`execute!`（送控制指令），全在 default features 內。
+
+### 安裝指令對照
+
+```bash
+# 方法一：cargo add（推薦）
+cargo add ratatui
+cargo add crossterm
+
+# 方法二：直接編輯 [dependencies] 區塊（如上面的 Cargo.toml 所示）
+```
+
+Python 對照：相當於 `pip install ratatui crossterm`，但 Rust 不需要虛擬環境。注意 `ratatui` 與 `crossterm` 的版本要相容--本教程用 `ratatui 0.30` + `crossterm 0.29`（這是 ratatui 0.30 測試過的組合），亂配版本可能編譯失敗。
+
 ## Python 對照
 
 在 Python 裡，最接近的工具是標準庫的 `curses`，它同樣需要進入特殊終端模式、讀取按鍵、繪製文字。但 `ratatui` 提供了一套更高階的 **widget 系統**（外框、段落、列表、表格…），讓你像組積木一樣拼畫面，而不必手動管理游標座標。

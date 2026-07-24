@@ -21,7 +21,7 @@
 
 ## 📚 目錄
 
-本教程共 7 章，從基礎語法到完整 Web API，循序漸進：
+本教程共 8 章，從基礎語法到完整 Web API，再到巨集與測試，循序漸進：
 
 | 章 | 標題 | 你會學到什麼 | 難度 | 需網路 |
 |----|------|-------------|:----:|:------:|
@@ -32,6 +32,7 @@
 | [4](chapters/ch04-networking/README.md) | **網路程式（reqwest）** | HTTP GET/POST、serde JSON 強型別解析 | ⭐⭐ | ✅ |
 | [5](chapters/ch05-sqlite/README.md) | **SQLite（rusqlite）** | 資料庫 CRUD、params! 防注入、同步 vs 非同步 | ⭐⭐ | ❌ |
 | [6](chapters/ch06-web/README.md) | **Web 開發（axum）** | REST API、Router、Extractor、Arc\<Mutex\> 共用狀態 | ⭐⭐⭐ | ❌ |
+| [7](chapters/ch07-macros/README.md) | **巨集（macro_rules! / derive / 屬性）** | 自己寫 macro_rules! 巨集、理解 #[...] 家族、cargo test | ⭐⭐ | ❌ |
 
 > **難度**：⭐ 入門 → ⭐⭐ 進階 → ⭐⭐⭐ 壓軸整合
 
@@ -49,6 +50,9 @@ ch00 基礎 ──► ch01 CLI ──► ch02 TUI ──┐
                        ch05 sqlite ────┘                        │
                                                                 ▼
                                                         ch06 web（壓軸）
+                                                                │
+                                                                ▼
+                                                          ch07 巨集
 ```
 
 ### 為什麼是這個順序？
@@ -56,15 +60,16 @@ ch00 基礎 ──► ch01 CLI ──► ch02 TUI ──┐
 - **ch00 先讀**：ownership / borrowing 是 Python 開發者最大的門檻，後面每一章都會用到。
 - **ch01 → ch02**：CLI 最簡單（不需 async）；TUI 同步事件迴圈，視覺回饋強，建立信心。
 - **ch03 在 ch04 / ch06 之前**：reqwest 與 axum 都是 async，必須先懂 tokio。
-- **ch06 最後**：壓軸章整合 async + serde + REST，是前面所學的總驗收。
+- **ch06 壓軸**：整合 async + serde + REST，是前面所學的總驗收。
 - **ch05 獨立**：rusqlite 是同步的，與 ch04 平行，任何時間點讀皆可。
+- **ch07 在最後**：巨集主題探討前面各章一直用到的 `#[...]` 家族，建議先熟悉 `#[derive]` 用法再讀。也可獨立閱讀（不依賴前面應用章節）。
 
 ### 兩條推薦路線
 
 | 路線 | 順序 | 適合誰 |
 |------|------|--------|
-| **穩紮穩打**（推薦） | 0 → 1 → 2 → 3 → 4 → 5 → 6 | 第一次學 Rust |
-| **快速到 Web** | 0 → 1 → 3 → 4 → 6 | 急著想看到 Web API 跑起來 |
+| **穩紮穩打**（推薦） | 0 -> 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 | 第一次學 Rust |
+| **快速到 Web** | 0 -> 1 -> 3 -> 4 -> 6 -> 7 | 急著想看到 Web API 跑起來 |
 
 ---
 
@@ -79,6 +84,7 @@ cargo run -p ch03-async           # 觀察循序 vs 並發耗時
 cargo run -p ch04-networking      # 抓取網路 JSON（需連線）
 cargo run -p ch05-sqlite          # 記憶體 SQLite CRUD
 cargo run -p ch06-web             # 啟動 REST API 伺服器 (http://localhost:3000)
+cargo run -p ch07-macros          # 巨集示範（derive + 4 個 macro_rules!）
 ```
 
 > 也可以進入單章目錄直接 `cargo run`：
@@ -193,6 +199,20 @@ API 與 Python `sqlite3` 高度對應，`params![]` 防注入、`query_map` 把�
 
 ---
 
+### [第 7 章：Rust 巨集（macro_rules! / derive / 屬性）](chapters/ch07-macros/README.md)
+
+> 學習目標：理解 `#[...]` 巨集家族，用 `macro_rules!` 自己寫巨集
+
+前面各章你已經用過很多次 `#[derive(Debug/Serialize/Parser)]`、`#[tokio::main]`、`#[serde(...)]`，但從沒解釋這些 `#[...]` 是什麼。本章把這層黑箱打開：解釋巨集 = 編譯期程式碼生成（與 Python decorator 執行期本質不同），分辨屬性巨集 / derive 巨集 / 宣告巨集三類，並用 `macro_rules!` 讓你實際動手寫巨集（從無參數到重複匹配、條件分支）。順帶示範 `#[test]` + `cargo test`（教程首個測試示範）。
+
+- 🔑 核心觀念：巨集 = 編譯期展開、三類巨集總覽、`$x:fragment` 片段、`$($x),*` 重複匹配、巨集 vs 函數、`#[test]` + `cargo test`
+- 🏃 執行：`cargo run -p ch07-macros`（印出 derive + 4 個巨集示範）
+- 🏃 測試：`cargo test -p ch07-macros`（教程首個示範 `cargo test`，跑 3 個測試）
+- ⚠️ Python 注意：Python 沒有編譯期巨集，decorator 是執行期、性質不同；`exec()` 無型別檢查
+- ✏️ 練習：寫 `max_of!` 巨集（2 個 expr 取較大）、`hashmap!` 巨集（`key => value, ...` 產生 HashMap）
+
+---
+
 ## 🧩 概念依賴圖
 
 想知道「學某章前要先會什麼」？看這張圖：
@@ -206,6 +226,7 @@ graph LR
     ch04["ch4 networking<br/>reqwest / serde"]
     ch05["ch5 sqlite<br/>rusqlite / CRUD"]
     ch06["ch6 web<br/>axum / REST API"]
+    ch07["ch7 巨集<br/>macro_rules! / derive"]
 
     ch00 --> ch01
     ch00 --> ch02
@@ -215,6 +236,8 @@ graph LR
     ch00 --> ch05
     ch01 --> ch06
     ch04 --> ch06
+    ch00 --> ch07
+    ch06 --> ch07
 
     style ch00 fill:#fde68a,stroke:#b45309
     style ch06 fill:#bbf7d0,stroke:#15803d
@@ -266,7 +289,7 @@ ch00（基礎）**強烈建議不要跳**，ownership 的觀念貫穿全書。�
 | Rust 版本 | edition 2021（cargo / rustc 1.97+） |
 | 語言 | 繁體中文 |
 | 目標讀者 | 熟悉 Python 的開發者 |
-| 專案結構 | Cargo workspace，7 個獨立 crate |
+| 專案結構 | Cargo workspace，8 個獨立 crate |
 | 授權 | 自由使用於學習目的 |
 
 ---

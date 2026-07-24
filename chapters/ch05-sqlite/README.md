@@ -7,20 +7,67 @@
 - 認識 `params![]` 巨集如何防止 SQL 注入、`query_map` 如何把列轉成 struct。
 - 了解同步（rusqlite）與非同步（sqlx）資料庫存取的差異與取捨。
 
----
+## 本章相依套件與 Cargo.toml
+
+本章只用到 1 個 crate：`rusqlite`（SQLite 的 Rust 綁定）。完整 `Cargo.toml`：
+
+```toml
+[package]
+name = "ch05-sqlite"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rusqlite = { version = "0.40", features = ["bundled"] }
+
+[[bin]]
+name = "ch05-sqlite"
+path = "src/main.rs"
+```
+
+### 各套件用途與 features 說明
+
+| crate      | 用途                                          | Python 對照          | 為什麼選它                                               |
+| ---------- | --------------------------------------------- | -------------------- | -------------------------------------------------------- |
+| `rusqlite` | SQLite 資料庫的 Rust 綁定（連線、查詢、交易） | `sqlite3` 標準庫模組 | 最成熟的同步 SQLite crate，API 風格接近 Python `sqlite3` |
+
+### 為什麼只有一個 crate？
+
+Python 的 `sqlite3` 是標準庫，`import sqlite3` 就有。Rust 沒有「SQLite 內建」--資料庫存取一律透過第三方 crate。`rusqlite` 是同步 API（直接綁 C 的 SQLite 庫），另外有 `sqlx` 做非同步存取（ch00 學習路徑提到的「進階 sqlx async DB」就是它），但本章用同步版本，觀念對應 Python `sqlite3` 最直接。
+
+### features 開關說明
+
+- **`rusqlite = { features = ["bundled"] }`**：這是最關鍵的 feature，**新手最容易卡在這裡**。`bundled` 的意思是「**把 SQLite 的 C 原始碼一起編譯進來**」，這樣你的專案自帶一份 SQLite，不依賴系統是否裝了 SQLite。
+
+  **不加 `bundled` 會怎樣？** cargo 會去找系統的 SQLite 庫（macOS 內建、Linux 要 `apt install libsqlite3-dev`），找不到就編譯失敗。加了 `bundled` 後，不管系統有沒有裝 SQLite 都能編譯，這也是本教程用它的原因--確保讀者跨平台都能跑。
+
+  **代價**：首次編譯會編 SQLite 的 C 程式碼（多花約 10-20 秒），但之後有快取就不痛。換來的是「零系統依賴、cargo build 就能用」的便利。
+
+  Python 對照：Python 的 `sqlite3` 模組在編譯時就靜態連結了 SQLite（CPython 自帶），所以 `import sqlite3` 一定能用。`rusqlite` 的 `bundled` feature 就是模擬這個行為。
+
+### 安裝指令對照
+
+```bash
+# 方法一：cargo add（推薦，務必加 --features bundled）
+cargo add rusqlite --features bundled
+
+# 方法二：直接編輯 [dependencies] 區塊（如上面的 Cargo.toml 所示）
+```
+
+Python 對照：相當於 `pip install pysqlite3`（如果你要自帶 SQLite 版本），但 Rust 的 `bundled` feature 更乾脆--一個開關就把 C 庫包進來。本章用 in-memory 資料庫（`Connection::open_in_memory()`），跑完即銷毀，不會在磁碟留檔。
 
 ## Python 對照
 
 Python 開發者對 `sqlite3` 模組應該不陌生。rusqlite 的 API 設計與它高度對應：
 
-| Python `sqlite3` | Rust `rusqlite` |
-|---|---|
-| `sqlite3.connect(":memory:")` | `Connection::open_in_memory()?` |
-| `cursor = conn.cursor()` | 直接用 `conn`（rusqlite 不用游標物件） |
-| `cursor.execute(sql, params)` | `conn.execute(sql, params![...])?` |
-| `cursor.fetchall()` | `stmt.query_map([], \|row\| ...)?` |
-| `conn.commit()` | 自動提交（rusqlite 預設 autocommit） |
-| `row[0]`、`row["name"]` | `row.get(0)?`、`row.get::<_, T>(1)?` |
+| Python `sqlite3`              | Rust `rusqlite`                        |
+| ----------------------------- | -------------------------------------- |
+| `sqlite3.connect(":memory:")` | `Connection::open_in_memory()?`        |
+| `cursor = conn.cursor()`      | 直接用 `conn`（rusqlite 不用游標物件） |
+| `cursor.execute(sql, params)` | `conn.execute(sql, params![...])?`     |
+| `cursor.fetchall()`           | `stmt.query_map([], \|row\| ...)?`     |
+| `conn.commit()`               | 自動提交（rusqlite 預設 autocommit）   |
+| `row[0]`、`row["name"]`       | `row.get(0)?`、`row.get::<_, T>(1)?`   |
 
 下面是完整 CRUD 流程的並排對照：
 
@@ -277,9 +324,11 @@ Todo { id: 2, title: "寫 Rust", done: false }
 ## 練習
 
 1. **新增 DELETE 操作**：寫一段程式刪除所有已完成的 todo，例如：
+
    ```rust
    conn.execute("DELETE FROM todos WHERE done = 1", [])?;
    ```
+
    執行後再查詢一次，確認已完成的項目被移除。
 
 2. **抽出查詢函數**：把重複的 SELECT 邏輯抽成一個函數 `fn list_todos(conn: &Connection) -> rusqlite::Result<()>`，在新增後、更新後、刪除後各呼叫一次，體驗 Rust 的函數複用。（提示：函數結束時 `stmt` 自動釋放借用，等同區塊的效果。）

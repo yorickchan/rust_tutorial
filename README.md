@@ -29,6 +29,7 @@
 | [ch04](chapters/ch04-networking/README.md) | 網路程式設計（reqwest） | 發 HTTP 請求、用 serde 解析 JSON（對應 Python `requests`） |
 | [ch05](chapters/ch05-sqlite/README.md) | SQLite 資料庫（rusqlite） | 同步 CRUD，對應 Python `sqlite3` 模組 |
 | [ch06](chapters/ch06-web/README.md) | Web 開發（axum） | 壓軸章：用 axum 建 Todo REST API，整合 async + serde |
+| [ch07](chapters/ch07-macros/README.md) | 巨集（macro_rules! / derive / 屬性） | 自己寫 macro_rules! 巨集、理解 #[...] 家族、cargo test |
 
 ## 使用方式
 
@@ -50,10 +51,10 @@ cargo run -p ch01-cli -- add "買牛奶"
 ## 建議學習順序
 
 ```
-ch00（基礎）→ ch01（CLI）→ ch02（TUI）→ ch03（async）→ ch04（networking）→ ch05（sqlite）→ ch06（web）
+ch00（基礎）-> ch01（CLI）-> ch02（TUI）-> ch03（async）-> ch04（networking）-> ch05（sqlite）-> ch06（web）-> ch07（巨集）
 ```
 
-ch00 先建立 ownership / borrowing 觀念（Python 開發者最大門檻）；ch03 的 async 是 ch04 / ch06 的前置；ch06 壓軸整合前面所學。
+ch00 先建立 ownership / borrowing 觀念（Python 開發者最大門檻）；ch03 的 async 是 ch04 / ch06 的前置；ch06 壓軸整合前面所學。ch07 在最後（或可獨立閱讀），探討前面各章一直用到的 `#[...]` 巨集家族，並教你用 `macro_rules!` 自己寫巨集--建議先熟悉 `#[derive]` 用法再讀。
 
 ## 環境需求
 

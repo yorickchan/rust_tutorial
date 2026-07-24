@@ -11,6 +11,63 @@ FastAPI / Flask 同等級的後端服務。
 - 用 `Arc<Mutex<T>>` 管理跨 task 的共用可變狀態
 - 整合 async + serde + JSON，完成一個可運作的 CRUD API
 
+## 本章相依套件與 Cargo.toml
+
+本章是壓軸整合章，用到 4 個 crate：`axum`（web 框架）、`tokio`（async runtime）、`serde`（序列化）、`serde_json`（JSON 格式）。完整 `Cargo.toml`：
+
+```toml
+[package]
+name = "ch06-web"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = "0.8"
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[[bin]]
+name = "ch06-web"
+path = "src/main.rs"
+```
+
+### 各套件用途與 features 說明
+
+| crate | 用途 | Python 對照 | 為什麼選它 |
+|---|---|---|---|
+| `axum` | web 框架（路由、extractor、middleware） | `FastAPI` / `Flask` | Tokio 生態的現代 web 框架，型別導向、文件清楚 |
+| `tokio` | async runtime（axum 建立在 tokio 上） | `uvicorn` / `asyncio` | axum 是 async 框架，必須有 runtime 才能跑 |
+| `serde` | 序列化框架（`Serialize` / `Deserialize` trait） | 無直接對應 | 讓 `Todo` struct 能轉成 JSON 回應、從 JSON 請求還原 |
+| `serde_json` | JSON 格式實作 | `json` 模組 | axum 的 `Json` extractor 內部用它 |
+
+### axum 為什麼不用寫 features？
+
+與前面章節不同，`axum = "0.8"` 沒有 `features = [...]`。這是因為 axum 的 **default features 已經包含本章需要的功能**：`http1`（HTTP/1.1 支援）、`json`（JSON extractor/reponse）、`tokio`（整合 runtime）、`query`（query string 解析）、`matched-path`、`original-uri`（路由匹配用）。本章的 CRUD API 只用到這些基礎功能，所以不必額外開 feature。
+
+如果之後要做 WebSocket，才需加 `features = ["ws"]`；要做 HTTP/2 要 `features = ["http2"]`。本章不需要。
+
+### features 開關說明
+
+- **`axum = "0.8"`**：純版本號、用 default features。理由如上--default 已含 http1 + json + tokio。本教程程式碼靠這些就夠。
+- **`tokio = { features = ["full"] }`**：全功能 runtime。本章用 `#[tokio::main]` 與 `axum::serve(listener, app).await`，需要 runtime + macros 等 feature。
+- **`serde = { features = ["derive"] }`**：啟用 `#[derive(Serialize, Deserialize)]`，讓 `Todo` struct 能在 JSON 與 Rust 之間轉換。詳見 ch00〈什麼是 `features = ["derive"]`？〉小節。
+- **`serde_json = "1"`**：純版本號、無 features。axum 的 `Json` extractor 內部會用到，顯式列出方便理解。
+
+### 安裝指令對照
+
+```bash
+# 方法一：cargo add（推薦）
+cargo add axum
+cargo add tokio --features full
+cargo add serde --features derive
+cargo add serde_json
+
+# 方法二：直接編輯 [dependencies] 區塊（如上面的 Cargo.toml 所示）
+```
+
+Python 對照：相當於 `pip install fastapi uvicorn`（加上序列化靠 Python 內建）。本章整合了前面所有觀念：async（ch03）、serde 序列化（ch04）、共用狀態用 `Arc<Mutex<T>>`（對應 Python 的 `threading.Lock`）--是整個教程的壓軸。
+
 ## Python 對照
 
 如果你寫過 FastAPI 或 Flask，axum 的概念會很熟悉，只是語法更型別導向：

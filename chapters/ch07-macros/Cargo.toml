@@ -1,0 +1,10 @@
+[package]
+name = "ch07-macros"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+[[bin]]
+name = "ch07-macros"
+path = "src/main.rs"

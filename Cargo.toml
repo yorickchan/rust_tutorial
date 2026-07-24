@@ -8,4 +8,5 @@ members = [
     "chapters/ch04-networking",
     "chapters/ch05-sqlite",
     "chapters/ch06-web",
+    "chapters/ch07-macros",
 ]

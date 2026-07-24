@@ -7,6 +7,55 @@
 - 比較「循序（sequential）」與「並發（concurrent）」執行的耗時差異。
 - 認識 `tokio::spawn` 對 `Send` 的要求，以及它與 Python `asyncio` 的關鍵差別。
 
+## 本章相依套件與 Cargo.toml
+
+本章只用到 1 個 crate：`tokio`（Rust 的非同步 runtime）。完整 `Cargo.toml`：
+
+```toml
+[package]
+name = "ch03-async"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+
+[[bin]]
+name = "ch03-async"
+path = "src/main.rs"
+```
+
+### 各套件用途與 features 說明
+
+| crate | 用途 | Python 對照 | 為什麼選它 |
+|---|---|---|---|
+| `tokio` | 非同步 runtime（執行 `async fn`、排程 task、提供 timer / IO） | `asyncio`（標準庫） | Rust 非同步生態的事實標準，大多數 async crate 都假設跑在 tokio 上 |
+
+### 為什麼需要 runtime？
+
+這是 Rust 與 Python 最大的觀念差異之一：**Rust 的 `async fn` 本身不會執行，只是回傳一個 `Future`（還沒跑的計算）**，必須交給 runtime 才會真正排程執行。Python 的 `asyncio` 把「定義協程」與「跑協程」綁在一起（`asyncio.run()` 就是 runtime），但 Rust 把這兩層分開--`async fn` 是語言功能，runtime 是套件（tokio 是其中一個選擇，另有 `async-std`、`smol` 等）。所以 Rust 寫 async 一定要加 runtime crate，不像 Python `import asyncio` 就有。
+
+### features 開關說明
+
+- **`tokio = { features = ["full"] }`**：啟用所有子功能。`tokio` 是個大型 crate，把功能拆成很多 feature flag：
+  - `rt-multi-thread`：多執行緒 runtime（本章 `#[tokio::main]` 預設用它）
+  - `macros`：提供 `#[tokio::main]` 與 `#[tokio::test]` 巨集（本章必用）
+  - `time`：`tokio::time::sleep`（本章並發示範用它製造延遲）
+  - `rt`、`net`、`io-util`、`sync`、`process`、`fs`…等其他子功能
+
+  用 `features = ["full"]` 一次全開，適合學習階段。正式專案若要縮小編譯體積，可只列實際用到的 feature（例如 `features = ["rt-multi-thread", "macros", "time"]`）。本章為了專注觀念、簡化 `Cargo.toml`，用 `full`。
+
+### 安裝指令對照
+
+```bash
+# 方法一：cargo add（推薦）
+cargo add tokio --features full
+
+# 方法二：直接編輯 [dependencies] 區塊（如上面的 Cargo.toml 所示）
+```
+
+Python 對照：相當於 `pip install tokio`，但概念上更像「同時裝 `asyncio` + 一個 event loop 實作」。Rust 沒有「內建 async runtime」，這是 Python 開發者一開始最不習慣的地方--Python 的 `asyncio` 是標準庫，Rust 的 async runtime 是第三方套件。
+
 ## Python 對照
 
 對 Python 開發者來說，Rust 的 `async`/`await` 在語法上與 `asyncio` 非常相似，但背後的執行模型與型別限制不同。
