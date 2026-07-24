@@ -9,3 +9,6 @@
 
 # macOS
 .DS_Store
+
+# 本機工作筆記（session notes，不入版控）
+/NOTES.local.md
