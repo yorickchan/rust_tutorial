@@ -1,0 +1,11 @@
+[package]
+name = "ch05-sqlite"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rusqlite = { version = "0.40", features = ["bundled"] }
+
+[[bin]]
+name = "ch05-sqlite"
+path = "src/main.rs"

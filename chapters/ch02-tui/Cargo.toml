@@ -1,0 +1,12 @@
+[package]
+name = "ch02-tui"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ratatui = "0.30"
+crossterm = "0.29"
+
+[[bin]]
+name = "ch02-tui"
+path = "src/main.rs"

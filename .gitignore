@@ -1,0 +1,11 @@
+# 建置產出（virtual manifest 的 target/ 在 workspace 根目錄）
+/target
+
+# IDE / 編輯器
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# macOS
+.DS_Store

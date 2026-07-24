@@ -1,0 +1,11 @@
+[workspace]
+resolver = "2"
+members = [
+    "chapters/ch00-basics",
+    "chapters/ch01-cli",
+    "chapters/ch02-tui",
+    "chapters/ch03-async",
+    "chapters/ch04-networking",
+    "chapters/ch05-sqlite",
+    "chapters/ch06-web",
+]

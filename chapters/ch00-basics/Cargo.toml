@@ -1,0 +1,8 @@
+[package]
+name = "ch00-basics"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "ch00-basics"
+path = "src/main.rs"
