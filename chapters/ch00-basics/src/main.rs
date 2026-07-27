@@ -27,7 +27,7 @@ fn parse_num(s: &str) -> Result<i32, std::num::ParseIntError> {
     s.parse()
 }
 
-// Struct：對照 Python 的 `class`（資料欄位）。
+// Struct + impl：對照 Python 的 class（資料 + 方法）。
 // `#[derive(Debug)]` 讓我們可以用 `{:?}` 印出內容。
 #[derive(Debug)]
 struct User {
@@ -35,16 +35,56 @@ struct User {
     age: u32,
 }
 
-// Enum：Rust 的列舉。
-// 對照 Python：沒有真正的 enum（`enum` 模組只是近似）。
-// `#[allow(dead_code)]`：教學用，所有 variant 都在 main 的 match 中配對，
-// 但 rustc 的 dead_code 分析在此不認定為「建構」，故加上 allow 避免警告。
+// impl 區塊：放「方法」。這就是 Python class 裡的 def 方法。
+impl User {
+    // 關聯函數（associated function）：沒有 self，類似 Python 的 @staticmethod。
+    // 慣例用 new() 當建構子（constructor）。
+    fn new(name: &str, age: u32) -> User {
+        User {
+            name: String::from(name),
+            age,
+        }
+    }
+
+    // 方法：&self = 不可變借用 self（唯讀），對應 Python 的 def method(self)。
+    fn greeting(&self) -> String {
+        format!("我是 {}，{} 歲", self.name, self.age)
+    }
+
+    // 方法：&mut self = 可變借用 self（可修改），對應 Python 裡會改 self 屬性的方法。
+    fn have_birthday(&mut self) {
+        self.age += 1;
+    }
+}
+
+// Enum 帶資料：每個 variant 可以夾帶不同的資料。
+// 這是 Rust 做「多型」的方式--不用繼承，用 enum + match 依 variant 分派。
+// 對照 Python：Python 用 class Circle(Shape) 繼承多型，Rust 用 enum variant 取代。
 #[allow(dead_code)]
-enum Direction {
-    Up,
-    Down,
-    Left,
-    Right,
+enum Shape {
+    Circle(f64),           // 帶一個 f64（半徑）
+    Rectangle(f64, f64),   // 帶兩個 f64（寬、高）
+    Square(f64),           // 帶一個 f64（邊長）
+}
+
+impl Shape {
+    // 用 match 依 variant 做不同計算--這就是 Rust 的「多型分派」。
+    fn area(&self) -> f64 {
+        match self {
+            Shape::Circle(r) => 3.14 * r * r,
+            Shape::Rectangle(w, h) => w * h,
+            Shape::Square(s) => s * s,
+        }
+    }
+
+    // 回傳形狀名稱
+    fn name(&self) -> &str {
+        match self {
+            Shape::Circle(_) => "圓形",
+            Shape::Rectangle(_, _) => "矩形",
+            Shape::Square(_) => "正方形",
+        }
+    }
 }
 
 fn main() {
@@ -113,20 +153,22 @@ fn main() {
     }
     println!();
 
-    // === 6. Struct 與 Enum ===
-    // Python 用 class；Rust 用 struct（資料）+ impl（方法）。
-    let user = User {
-        name: String::from("小明"),
-        age: 28,
-    };
-    let dir = Direction::Down;
-    println!("=== 6. Struct 與 Enum ===");
-    println!("User: {:?}", user);
-    match dir {
-        Direction::Up => println!("Direction::Up => 上"),
-        Direction::Down => println!("Direction::Down => 下"),
-        Direction::Left => println!("Direction::Left => 左"),
-        Direction::Right => println!("Direction::Right => 右"),
+    // === 6. Struct + impl 與 Enum（取代 class/OOP）===
+    // Python 用 class 把資料和方法包在一起；Rust 用 struct（資料）+ impl（方法）分開寫。
+    let mut user = User::new("小明", 28);   // 關聯函數（建構子），用 Type::func() 呼叫
+    println!("=== 6. Struct + impl 與 Enum ===");
+    println!("{}", user.greeting());         // 呼叫 &self 方法
+    user.have_birthday();                    // 呼叫 &mut self 方法（會改 user）
+    println!("過生日後: {}", user.greeting());
+
+    // Enum 帶資料 + match 分派：Rust 的「多型」不靠繼承，靠 enum variant + match。
+    let shapes = [
+        Shape::Circle(5.0),
+        Shape::Rectangle(3.0, 4.0),
+        Shape::Square(2.0),
+    ];
+    for s in &shapes {
+        println!("{} 的面積 = {:.2}", s.name(), s.area());
     }
     println!();
 
@@ -141,17 +183,7 @@ fn main() {
     println!("=== 7. Pattern matching ===");
     println!("hour = {} => {}", hour, period);
 
-    // 配對 enum variant
-    let d = Direction::Right;
-    let arrow = match d {
-        Direction::Up => "↑",
-        Direction::Down => "↓",
-        Direction::Left => "←",
-        Direction::Right => "→",
-    };
-    println!("Direction::Right => {}", arrow);
-
-    // 解構 struct：從 &user 取出 name 與 age 的參考
+    // 解構 struct：一次取出 name 和 age（match 匹配 &user，取出的會是參考）
     let User { name, age } = &user;
     println!("解構 User: name = \"{}\", age = {}", name, age);
 }
